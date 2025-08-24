@@ -10,15 +10,15 @@ import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.*;
 
 class FilmControllerTest {
-    private final String DESCRIPTION_TEMPLATE = "a".repeat(200);
-    private final LocalDate MIN_DATE_RELEASE = LocalDate.of(1895, 12, 28);
+    private final String descriptionTemplate = "a".repeat(200);
+    private final LocalDate minDateRelease = LocalDate.of(1895, 12, 28);
     FilmController filmController = new FilmController();
 
     @Test
     @DisplayName("Проверка исключения на название фильма")
     void nameExceptionTest() {
         final ValidationException exception = assertThrows(ValidationException.class,
-                () -> filmController.createFilm(filmGenerator(0, null, DESCRIPTION_TEMPLATE, MIN_DATE_RELEASE, 1)));
+                () -> filmController.createFilm(filmGenerator(0, null, descriptionTemplate, minDateRelease, 1)));
         assertEquals("Название фильма не может быть пустым", exception.getMessage());
     }
 
@@ -26,12 +26,12 @@ class FilmControllerTest {
     @DisplayName("Проверка исключений на описание фильма")
     void descriptionExceptionTest() {
         final ValidationException emptyException = assertThrows(ValidationException.class,
-                () -> filmController.createFilm(filmGenerator(0, "a", null, MIN_DATE_RELEASE,
+                () -> filmController.createFilm(filmGenerator(0, "a", null, minDateRelease,
                         1)));
         assertEquals("Описание фильма не заполнено", emptyException.getMessage());
 
         final ValidationException overflowException = assertThrows(ValidationException.class,
-                () -> filmController.createFilm(filmGenerator(0, "a", DESCRIPTION_TEMPLATE + "a", MIN_DATE_RELEASE,
+                () -> filmController.createFilm(filmGenerator(0, "a", descriptionTemplate + "a", minDateRelease,
                         1)));
         assertEquals("Максимальная длинна описания 200 символов", overflowException.getMessage());
     }
@@ -40,13 +40,13 @@ class FilmControllerTest {
     @DisplayName("Проверка исключений на дату релиза фильма")
     void releaseDateExceptionTest() {
         final ValidationException emptyException = assertThrows(ValidationException.class,
-                () -> filmController.createFilm(filmGenerator(0, "a", DESCRIPTION_TEMPLATE, null,
+                () -> filmController.createFilm(filmGenerator(0, "a", descriptionTemplate, null,
                         1)));
         assertEquals("Дата релиза не заполнена", emptyException.getMessage());
 
         final ValidationException overflowException = assertThrows(ValidationException.class,
-                () -> filmController.createFilm(filmGenerator(0, "a", DESCRIPTION_TEMPLATE,
-                        MIN_DATE_RELEASE.minusDays(1),1)));
+                () -> filmController.createFilm(filmGenerator(0, "a", descriptionTemplate,
+                        minDateRelease.minusDays(1),1)));
         assertEquals("Дата релиза не может быть ранее, чем 28 декабря 1895", overflowException.getMessage());
     }
 
@@ -54,13 +54,13 @@ class FilmControllerTest {
     @DisplayName("Проверка исключений на продолжительность фильма")
     void durationExceptionTest() {
         final ValidationException emptyException = assertThrows(ValidationException.class,
-                () -> filmController.createFilm(filmGenerator(0, "a", DESCRIPTION_TEMPLATE, MIN_DATE_RELEASE,
+                () -> filmController.createFilm(filmGenerator(0, "a", descriptionTemplate, minDateRelease,
                         null)));
         assertEquals("Продолжительность фильма не заполнена", emptyException.getMessage());
 
         final ValidationException overflowException = assertThrows(ValidationException.class,
-                () -> filmController.createFilm(filmGenerator(0, "a", DESCRIPTION_TEMPLATE,
-                        MIN_DATE_RELEASE,-1)));
+                () -> filmController.createFilm(filmGenerator(0, "a", descriptionTemplate,
+                        minDateRelease,-1)));
         assertEquals("Продолжительность фильма не может быть отрицательной", overflowException.getMessage());
     }
 
