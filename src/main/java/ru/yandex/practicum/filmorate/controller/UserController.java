@@ -14,6 +14,7 @@ import java.util.*;
 @RequestMapping("/users")
 public class UserController {
     private final Map<Integer, User> users = new HashMap<>();
+    private int lastId = 0;
 
     @GetMapping
     public Collection<User> getUsers() {
@@ -23,7 +24,7 @@ public class UserController {
     @PostMapping
     public User createUser(@RequestBody User user) {
         validateUser(user);
-        user.setId(getNextId());
+        user.setId(lastId++);
 
         if (user.getName() == null || user.getName().isEmpty()) {
             user.setName(user.getLogin());
@@ -40,30 +41,31 @@ public class UserController {
             throw new ValidationException("Id пользователя должен быть указан");
         }
 
-        if (users.containsKey(user.getId())) {
-            User oldUser = users.get(user.getId());
-
-            if (user.getName() != null && !user.getName().isEmpty()) {
-                oldUser.setName(user.getName());
-            }
-
-            if (user.getLogin() != null) {
-                oldUser.setLogin(user.getLogin());
-            }
-
-            if (user.getBirthday() != null) {
-                oldUser.setBirthday(user.getBirthday());
-            }
-
-            if (user.getEmail() != null) {
-                oldUser.setEmail(user.getEmail());
-            }
-
-            validateUser(oldUser);
-            return oldUser;
+        if (!users.containsKey(user.getId())) {
+            throw new NotFoundException("Пользователь с id " + user.getId() + " не найден");
         }
 
-        throw new NotFoundException("Пользователь с id " + user.getId() + " не найден");
+        User oldUser = users.get(user.getId());
+
+        if (user.getName() != null && !user.getName().isEmpty()) {
+            oldUser.setName(user.getName());
+        }
+
+        if (user.getLogin() != null) {
+            oldUser.setLogin(user.getLogin());
+        }
+
+        if (user.getBirthday() != null) {
+            oldUser.setBirthday(user.getBirthday());
+        }
+
+        if (user.getEmail() != null) {
+            oldUser.setEmail(user.getEmail());
+        }
+
+        validateUser(oldUser);
+        return oldUser;
+
     }
 
     private void validateUser(User user) {
@@ -97,14 +99,5 @@ public class UserController {
             throw new ValidationException("Некорректно указана дата рождения");
         }
 
-    }
-
-    private int getNextId() {
-        int currentMaxId = users.keySet()
-                .stream()
-                .mapToInt(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
     }
 }

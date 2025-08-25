@@ -16,8 +16,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/films")
 public class FilmController {
-    private final LocalDate minDateRelease = LocalDate.of(1895, 12, 28);
-
+    private static final LocalDate minDateRelease = LocalDate.of(1895, 12, 28);
+    private int lastId = 0;
     private final Map<Integer, Film> films = new HashMap<>();
 
     @GetMapping
@@ -33,7 +33,7 @@ public class FilmController {
             throw new DuplicatedDataException("Такой фильм уже существует");
         }
 
-        film.setId(getNextId());
+        film.setId(lastId++);
         films.put(film.getId(), film);
         log.info("Добавлен фильм {}", film.getName());
         return film;
@@ -46,31 +46,31 @@ public class FilmController {
             throw new ValidationException("Id должен быть указан");
         }
 
-        if (films.containsKey(film.getId())) {
-            Film oldFilm = films.get(film.getId());
-
-            if (film.getName() != null) {
-                oldFilm.setName(film.getName());
-            }
-
-            if (film.getDescription() != null) {
-                oldFilm.setDescription(film.getDescription());
-            }
-
-            if (film.getReleaseDate() != null) {
-                oldFilm.setReleaseDate(film.getReleaseDate());
-            }
-
-            if (film.getDuration() != null) {
-                oldFilm.setDuration(film.getDuration());
-            }
-
-            validateFilm(oldFilm);
-            log.info("Обновлен фильм {}", oldFilm.getName());
-            return oldFilm;
+        if (!films.containsKey(film.getId())) {
+            throw new NotFoundException("Фильм с id = " + film.getId() + " не найден");
         }
 
-        throw new NotFoundException("Фильм с id = " + film.getId() + " не найден");
+        Film oldFilm = films.get(film.getId());
+
+        if (film.getName() != null) {
+            oldFilm.setName(film.getName());
+        }
+
+        if (film.getDescription() != null) {
+            oldFilm.setDescription(film.getDescription());
+        }
+
+        if (film.getReleaseDate() != null) {
+            oldFilm.setReleaseDate(film.getReleaseDate());
+        }
+
+        if (film.getDuration() != null) {
+            oldFilm.setDuration(film.getDuration());
+        }
+
+        validateFilm(oldFilm);
+        log.info("Обновлен фильм {}", oldFilm.getName());
+        return oldFilm;
     }
 
     private void validateFilm(Film film) {
@@ -116,14 +116,5 @@ public class FilmController {
                 .filter(existFilm -> name.equals(existFilm.getName()))
                 .findFirst()
                 .orElse(null);
-    }
-
-    private int getNextId() {
-        int currentMaxId = films.keySet()
-                .stream()
-                .mapToInt(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
     }
 }
