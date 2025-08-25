@@ -14,7 +14,7 @@ import java.util.*;
 @RequestMapping("/users")
 public class UserController {
     private final Map<Integer, User> users = new HashMap<>();
-    private int lastId = 0;
+    private int lastId = 1;
 
     @GetMapping
     public Collection<User> getUsers() {

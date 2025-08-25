@@ -60,7 +60,7 @@ public class UserControllerTest {
         User user = userGenerator(1, "emailemail.ru@", "login", "", LocalDate.now());
         userController.createUser(user);
         assertEquals(user.getName(), user.getLogin());
-        assertEquals(user.getId(), 0);
+        assertEquals(user.getId(), 1);
     }
 
     private User userGenerator(int id, String email, String login, String name, LocalDate birthday) {
