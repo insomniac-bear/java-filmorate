@@ -1,6 +1,13 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -8,68 +15,124 @@ import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@SpringBootTest
+@AutoConfigureMockMvc
 public class UserControllerTest {
-    UserController userController = new UserController();
+    @Autowired private MockMvc mvc;
+    @Autowired private ObjectMapper objectMapper;
 
     @Test
-    void emailNullExceptionTest() {
-        final ValidationException exception = assertThrows(
-                ValidationException.class,
-                () -> userController.createUser(userGenerator(1, null, "login", "name", LocalDate.of(2020, 12, 1))));
-        assertEquals("Email не заполнен", exception.getMessage());
+    @DisplayName("Проверка Email на null значение")
+    void emailIsNullExceptionTest() throws Exception {
+        User user = User.builder()
+                .email(null)
+                .name("Имя")
+                .birthday(LocalDate.now())
+                .build();
+
+        mvc.perform(
+                post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void emailNoValidExceptionTest() {
-        final ValidationException exception = assertThrows(
-                ValidationException.class,
-                () -> userController.createUser(userGenerator(1, "email", "login", "name", LocalDate.of(2020, 12, 1))));
-        assertEquals("Некорректный email", exception.getMessage());
+    @DisplayName("Проверка Email на пустое значение")
+    void emailIsBlankExceptionTest() throws Exception {
+        User user = User.builder()
+                .email(" ")
+                .name("Имя")
+                .birthday(LocalDate.now())
+                .build();
+
+        mvc.perform(
+                post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void loginNullExceptionTest() {
-        final ValidationException exception = assertThrows(
-                ValidationException.class,
-                () -> userController.createUser(userGenerator(1, "email@email.ru", null, "name", LocalDate.of(2020, 12,
-                        1))));
-        assertEquals("Логин пользователя не заполнен", exception.getMessage());
+    @DisplayName("Проверка Email на не корректное значение")
+    void emailIsInvalidExceptionTest() throws Exception {
+        User user = User.builder()
+                .email("invalid.mail")
+                .name("Имя")
+                .birthday(LocalDate.now())
+                .build();
+
+        mvc.perform(
+                post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void loginNoValidExceptionTest() {
-        final ValidationException exception = assertThrows(
-                ValidationException.class,
-                () -> userController.createUser(userGenerator(1, "email@email.ru", "my login", "name", LocalDate.of(2020, 12,
-                        1))));
-        assertEquals("Логин пользователя не должен содержать пробелы", exception.getMessage());
+    @DisplayName("Проверка Login на null значение")
+    void loginNullExceptionTest() throws Exception {
+        User user = User.builder()
+                .email("valid@mail.com")
+                .login(null)
+                .birthday(LocalDate.now())
+                .build();
+
+        mvc.perform(
+                post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void birthDayExceptionTest() {
-        final ValidationException exception = assertThrows(
-                ValidationException.class,
-                () -> userController.createUser(userGenerator(1, "email@email.ru", "login", "name",
-                        LocalDate.now().plusDays(1))));
-        assertEquals("Некорректно указана дата рождения", exception.getMessage());
+    @DisplayName("Проверка Login на пробелы")
+    void loginNoValidExceptionTest() throws Exception {
+        User user = User.builder()
+                .email("valid@mail.com")
+                .login("Не корректный логин")
+                .birthday(LocalDate.now())
+                .build();
+
+        mvc.perform(
+                post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void addUserTest() {
-        User user = userGenerator(1, "emailemail.ru@", "login", "", LocalDate.now());
-        userController.createUser(user);
-        assertEquals(user.getName(), user.getLogin());
-        assertEquals(user.getId(), 1);
+    @DisplayName("Проверка Birthday на то, что оно не в будущем")
+    void birthDayExceptionTest() throws Exception {
+        User user = User.builder()
+                .email("valid@mail.com")
+                .login("Не корректный логин")
+                .birthday(LocalDate.now().plusDays(1))
+                .build();
+
+        mvc.perform(
+                post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isBadRequest());
     }
 
-    private User userGenerator(int id, String email, String login, String name, LocalDate birthday) {
-        User user = new User();
-        user.setId(id);
-        user.setEmail(email);
-        user.setLogin(login);
-        user.setName(name);
-        user.setBirthday(birthday);
-        return user;
+    @Test
+    @DisplayName("Проверка корректного создания пользователя")
+    void addUserTest() throws Exception {
+        User user = User.builder()
+                .email("valid@mail.com")
+                .login("Логин")
+                .birthday(LocalDate.now().minusDays(1))
+                .build();
+
+        mvc.perform(
+                post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isOk());
     }
 }

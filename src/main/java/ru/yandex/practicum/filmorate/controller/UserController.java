@@ -23,10 +23,9 @@ public class UserController {
 
     @PostMapping
     public User createUser(@Valid @RequestBody User user) {
-        validateUser(user);
         user.setId(lastId++);
 
-        if (user.getName() == null || user.getName().isEmpty()) {
+        if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
         }
 
@@ -35,7 +34,7 @@ public class UserController {
     }
 
     @PutMapping
-    public User updateUser(@RequestBody User user) {
+    public User updateUser(@Valid @RequestBody User user) {
         if (user.getId() == null) {
             log.warn("не указан id");
             throw new ValidationException("Id пользователя должен быть указан");
@@ -63,15 +62,7 @@ public class UserController {
             oldUser.setEmail(user.getEmail());
         }
 
-        validateUser(oldUser);
         return oldUser;
 
-    }
-
-    private void validateUser(User user) {
-        if (user.getLogin().contains(" ")) {
-            log.warn("login содержит пробелы");
-            throw new ValidationException("Логин пользователя не должен содержать пробелы");
-        }
     }
 }

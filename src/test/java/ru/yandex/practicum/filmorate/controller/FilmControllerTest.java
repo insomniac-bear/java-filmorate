@@ -1,76 +1,221 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.time.LocalDate;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@SpringBootTest
+@AutoConfigureMockMvc
 class FilmControllerTest {
-    private final String descriptionTemplate = "a".repeat(200);
-    private final LocalDate minDateRelease = LocalDate.of(1895, 12, 28);
-    FilmController filmController = new FilmController();
+    @Autowired private MockMvc mvc;
+    @Autowired private ObjectMapper objectMapper;
 
     @Test
-    @DisplayName("Проверка исключения на название фильма")
-    void nameExceptionTest() {
-        final ValidationException exception = assertThrows(ValidationException.class,
-                () -> filmController.createFilm(filmGenerator(0, null, descriptionTemplate, minDateRelease, 1)));
-        assertEquals("Название фильма не может быть пустым", exception.getMessage());
+    @DisplayName("Проверка исключения на null название фильма")
+    void nameIsNullExceptionTest() throws Exception {
+        Film film =
+                Film.builder()
+                        .name(null)
+                        .description("Описание")
+                        .duration(1)
+                        .releaseDate(LocalDate.now())
+                        .build();
+
+        mvc.perform(
+                post("/films")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(film)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    @DisplayName("Проверка исключений на описание фильма")
-    void descriptionExceptionTest() {
-        final ValidationException emptyException = assertThrows(ValidationException.class,
-                () -> filmController.createFilm(filmGenerator(0, "a", null, minDateRelease,
-                        1)));
-        assertEquals("Описание фильма не заполнено", emptyException.getMessage());
+    @DisplayName("Проверка исключения на название фильма состоящее только из пробелов")
+    void nameIsBlankExceptionTest() throws Exception {
+        Film film =
+                Film.builder()
+                        .name(" ")
+                        .description("Описание")
+                        .duration(1)
+                        .releaseDate(LocalDate.now())
+                        .build();
 
-        final ValidationException overflowException = assertThrows(ValidationException.class,
-                () -> filmController.createFilm(filmGenerator(0, "a", descriptionTemplate + "a", minDateRelease,
-                        1)));
-        assertEquals("Максимальная длинна описания 200 символов", overflowException.getMessage());
+        mvc.perform(
+                post("/films")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(film)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Проверка исключения на пустое название фильма")
+    void nameIsEmptyExceptionTest() throws Exception {
+        Film film =
+                Film.builder()
+                        .name("")
+                        .description("Описание")
+                        .duration(1)
+                        .releaseDate(LocalDate.now())
+                        .build();
+
+        mvc.perform(
+                post("/films")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(film)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Проверка исключения на null описание фильма")
+    void descriptionIsNullExceptionTest() throws Exception {
+        Film film =
+                Film.builder()
+                        .name("Имя")
+                        .description(null)
+                        .duration(1)
+                        .releaseDate(LocalDate.now())
+                        .build();
+
+        mvc.perform(
+                post("/films")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(film)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Проверка исключения на описание фильма состоящее только из пробелов")
+    void descriptionIsBlankExceptionTest() throws Exception {
+        Film film =
+                Film.builder()
+                        .name("Имя")
+                        .description(" ")
+                        .duration(1)
+                        .releaseDate(LocalDate.now())
+                        .build();
+
+        mvc.perform(
+                        post("/films")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(film)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Проверка исключения на пустое описание фильма")
+    void descriptionIsEmptyExceptionTest() throws Exception {
+        Film film =
+                Film.builder()
+                        .name("Имя")
+                        .description("")
+                        .duration(1)
+                        .releaseDate(LocalDate.now())
+                        .build();
+
+        mvc.perform(
+                        post("/films")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(film)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Проверка исключения на длинное описание фильма")
+    void descriptionIsTooLongExceptionTest() throws Exception {
+        Film film =
+                Film.builder()
+                        .name("Имя")
+                        .description("a".repeat(201))
+                        .duration(1)
+                        .releaseDate(LocalDate.now())
+                        .build();
+
+        mvc.perform(
+                        post("/films")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(film)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
     @DisplayName("Проверка исключений на дату релиза фильма")
-    void releaseDateExceptionTest() {
-        final ValidationException emptyException = assertThrows(ValidationException.class,
-                () -> filmController.createFilm(filmGenerator(0, "a", descriptionTemplate, null,
-                        1)));
-        assertEquals("Дата релиза не заполнена", emptyException.getMessage());
+    void releaseDateExceptionTest() throws Exception {
+        Film film =
+                Film.builder()
+                        .name("Имя")
+                        .description("Описание")
+                        .duration(1)
+                        .releaseDate(LocalDate.of(1800, 1, 1))
+                        .build();
 
-        final ValidationException overflowException = assertThrows(ValidationException.class,
-                () -> filmController.createFilm(filmGenerator(0, "a", descriptionTemplate,
-                        minDateRelease.minusDays(1),1)));
-        assertEquals("Дата релиза не может быть ранее, чем 28 декабря 1895", overflowException.getMessage());
+        mvc.perform(
+                        post("/films")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(film)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    @DisplayName("Проверка исключений на продолжительность фильма")
-    void durationExceptionTest() {
-        final ValidationException emptyException = assertThrows(ValidationException.class,
-                () -> filmController.createFilm(filmGenerator(0, "a", descriptionTemplate, minDateRelease,
-                        null)));
-        assertEquals("Продолжительность фильма не заполнена", emptyException.getMessage());
+    @DisplayName("Проверка исключений на нулевую продолжительность фильма")
+    void durationIsZeroExceptionTest() throws Exception {
+        Film film =
+                Film.builder()
+                        .name("Имя")
+                        .description("Описание")
+                        .duration(0)
+                        .releaseDate(LocalDate.now())
+                        .build();
 
-        final ValidationException overflowException = assertThrows(ValidationException.class,
-                () -> filmController.createFilm(filmGenerator(0, "a", descriptionTemplate,
-                        minDateRelease,-1)));
-        assertEquals("Продолжительность фильма не может быть отрицательной", overflowException.getMessage());
+        mvc.perform(
+                        post("/films")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(film)))
+                .andExpect(status().isBadRequest());
     }
 
-    private Film filmGenerator(Integer id, String name, String description, LocalDate releaseDate, Integer duration) {
-        Film film = new Film();
-        film.setId(id);
-        film.setName(name);
-        film.setDescription(description);
-        film.setReleaseDate(releaseDate);
-        film.setDuration(duration);
-        return film;
+    @Test
+    @DisplayName("Проверка исключений на отрицательную продолжительность фильма")
+    void durationIsNegativeExceptionTest() throws Exception {
+        Film film =
+                Film.builder()
+                        .name("Имя")
+                        .description("Описание")
+                        .duration(-1)
+                        .releaseDate(LocalDate.now())
+                        .build();
+
+        mvc.perform(
+                        post("/films")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(film)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Проверка на успешное создание фильма")
+    void durationIsCreatedTest() throws Exception {
+        Film film =
+                Film.builder()
+                        .name("Имя")
+                        .description("Описание")
+                        .duration(1)
+                        .releaseDate(LocalDate.now())
+                        .build();
+
+        mvc.perform(
+                        post("/films")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(film)))
+                .andExpect(status().isOk());
     }
 }
