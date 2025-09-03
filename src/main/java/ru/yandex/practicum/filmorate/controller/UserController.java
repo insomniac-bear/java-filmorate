@@ -56,10 +56,10 @@ public class UserController {
         Long friendId = Long.parseLong(pathVarsMap.get("friendId"));
         return userService.removeFriend(userStorage.getUserById(userId), userStorage.getUserById(friendId));
     }
-    
+
     @GetMapping("/{id}/friends")
     @ResponseStatus(HttpStatus.OK)
-    public Set<Long>getFriends(@PathVariable String id) {
+    public Set<Long> getFriends(@PathVariable String id) {
         Long userId = Long.parseLong(id);
         User user = userStorage.getUserById(userId);
         return user.getFriends();
@@ -67,7 +67,7 @@ public class UserController {
 
     @GetMapping("/{id}/friends/common/{otherId}")
     @ResponseStatus(HttpStatus.OK)
-    public List<User>getCommonFriends(@PathVariable Map<String, String> pathVarMaps) {
+    public List<User> getCommonFriends(@PathVariable Map<String, String> pathVarMaps) {
         Long userId = Long.parseLong(pathVarMaps.get("id"));
         Long friendId = Long.parseLong(pathVarMaps.get("otherId"));
         return userService.getCommonFriends(userStorage.getUserById(userId), userStorage.getUserById(friendId));
