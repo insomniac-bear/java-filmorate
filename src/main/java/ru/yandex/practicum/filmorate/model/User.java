@@ -1,25 +1,30 @@
 package ru.yandex.practicum.filmorate.model;
 
 import jakarta.validation.constraints.*;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
 * User
 */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
 public class User {
-    private Integer id;
+    private Long id;
+    @NotEmpty
     @Email
     private String email;
-    @NotNull
     @NotBlank
     @Pattern(regexp = "^\\S+$", message = "Логин не может содержать пробелы")
     private String login;
     private String name;
-    @Past
+    @PastOrPresent
     private LocalDate birthday;
+    @Builder.Default
+    private Set<Long> friends = new HashSet<>();
 }
