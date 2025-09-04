@@ -33,6 +33,14 @@ public class UserService {
         return user;
     }
 
+    public List<User> getUserFriends(Long userId) {
+        User user = userStorage.getUserById(userId);
+        Map<Long, User> allUsers = userStorage.getUsers();
+        return user.getFriends().stream()
+                .map(allUsers::get)
+                .collect(Collectors.toList());
+    }
+
     public List<User> getCommonFriends(User user, User friend) {
         Set<Long> commonFriendIds = new HashSet<>(user.getFriends());
         commonFriendIds.retainAll(friend.getFriends());

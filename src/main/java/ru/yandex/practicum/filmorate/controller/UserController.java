@@ -59,10 +59,8 @@ public class UserController {
 
     @GetMapping("/{id}/friends")
     @ResponseStatus(HttpStatus.OK)
-    public Set<Long> getFriends(@PathVariable String id) {
-        Long userId = Long.parseLong(id);
-        User user = userStorage.getUserById(userId);
-        return user.getFriends();
+    public List<User> getFriends(@PathVariable Long id) {
+        return userService.getUserFriends(id);
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")

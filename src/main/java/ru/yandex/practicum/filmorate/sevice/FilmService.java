@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.sevice;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
@@ -11,6 +12,7 @@ import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -23,10 +25,15 @@ public class FilmService {
 
     public Film addLike(Long filmId, Long userId) {
         Film film = filmStorage.getFilmById(filmId);
-        User user = userStorage.getUserById(userId);
+        Map<Long, User> users = userStorage.getUsers();
 
-        Set<User> filmLikes = film.getLikes();
-        filmLikes.add(user);
+        if (!users.containsKey(userId)) {
+            log.error("Пользователь с id {} не найден", userId);
+            throw new NotFoundException("Пользователь с id " + userId +  " не найден");
+        }
+
+        Set<Long> filmLikes = film.getLikes();
+        filmLikes.add(userId);
         log.trace("Добавлен лайк от пользователя с id {} для фильма с id {}", userId, filmId);
 
         return film;
@@ -34,10 +41,15 @@ public class FilmService {
 
     public void removeLike(Long filmId, Long userId) {
         Film film = filmStorage.getFilmById(filmId);
-        User user = userStorage.getUserById(userId);
+        Map<Long, User> users = userStorage.getUsers();
 
-        Set<User> filmLikes = film.getLikes();
-        filmLikes.remove(user);
+        if (!users.containsKey(userId)) {
+            log.error("Пользователь с id {} не найден", userId);
+            throw new NotFoundException("Пользователь с id " + userId +  " не найден");
+        }
+
+        Set<Long> filmLikes = film.getLikes();
+        filmLikes.remove(userId);
         log.trace("Удален лайк от пользователя с id {} для фильма с id {}", userId, filmId);
     }
 
@@ -48,7 +60,7 @@ public class FilmService {
         }
 
         return filmStorage.getFilms().values().stream()
-                .sorted(Comparator.comparingInt(f -> f.getLikes().size())
+                .sorted(Comparator.comparingInt(f -> -f.getLikes().size())
                 )
                 .limit(count)
                 .collect(Collectors.toList());
