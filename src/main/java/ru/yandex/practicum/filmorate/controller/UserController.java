@@ -6,7 +6,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.sevice.UserService;
-import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import java.util.*;
 
@@ -15,30 +14,29 @@ import java.util.*;
 @RequestMapping("/users")
 public class UserController {
     private final UserService userService;
-    private final InMemoryUserStorage userStorage;
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public Collection<User> getUsers() {
-        return userStorage.getUsers().values();
+        return userService.getAll();
     }
 
     @GetMapping("/{userId}")
     @ResponseStatus(HttpStatus.OK)
     public User getUserById(@PathVariable Long userId) {
-        return userStorage.getUserById(userId);
+        return userService.getById(userId);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public User createUser(@Valid @RequestBody User user) {
-        return userStorage.createUser(user);
+        return userService.create(user);
     }
 
     @PutMapping
     @ResponseStatus(HttpStatus.OK)
     public User updateUser(@Valid @RequestBody User user) {
-        return userStorage.updateUser(user);
+        return userService.update(user);
     }
 
     @PutMapping("/{id}/friends/{friendId}")
@@ -54,7 +52,7 @@ public class UserController {
     public User removeFriend(@PathVariable Map<String, String> pathVarsMap) {
         Long userId = Long.parseLong(pathVarsMap.get("id"));
         Long friendId = Long.parseLong(pathVarsMap.get("friendId"));
-        return userService.removeFriend(userStorage.getUserById(userId), userStorage.getUserById(friendId));
+        return userService.removeFriend(userId, friendId);
     }
 
     @GetMapping("/{id}/friends")
@@ -68,6 +66,6 @@ public class UserController {
     public List<User> getCommonFriends(@PathVariable Map<String, String> pathVarMaps) {
         Long userId = Long.parseLong(pathVarMaps.get("id"));
         Long friendId = Long.parseLong(pathVarMaps.get("otherId"));
-        return userService.getCommonFriends(userStorage.getUserById(userId), userStorage.getUserById(friendId));
+        return userService.getCommonFriends(userId, friendId);
     }
 }

@@ -6,7 +6,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.sevice.FilmService;
-import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
 
 import java.util.Collection;
 
@@ -14,31 +13,30 @@ import java.util.Collection;
 @RequiredArgsConstructor
 @RequestMapping("/films")
 public class FilmController {
-    private final InMemoryFilmStorage filmStorage;
     private final FilmService filmService;
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public Collection<Film> getFilms() {
-        return filmStorage.getFilms().values();
+        return filmService.getAll();
     }
 
     @GetMapping("/{filmId}")
     @ResponseStatus(HttpStatus.OK)
     public Film getFilmById(@PathVariable Long filmId) {
-        return filmStorage.getFilmById(filmId);
+        return filmService.getById(filmId);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Film createFilm(@Valid @RequestBody Film film) {
-        return filmStorage.createFilm(film);
+        return filmService.create(film);
     }
 
     @PutMapping
     @ResponseStatus(HttpStatus.OK)
     public Film updateFilm(@Valid @RequestBody Film film) {
-        return filmStorage.updateFilm(film);
+        return filmService.update(film);
     }
 
     @GetMapping("/popular")

@@ -15,8 +15,8 @@ public class InMemoryUserStorage implements UserStorage {
     private Long lastId = 1L;
 
     @Override
-    public Map<Long, User> getUsers() {
-        return users;
+    public Collection<User> getUsers() {
+        return Map.copyOf(users).values();
     }
 
     @Override
@@ -28,7 +28,7 @@ public class InMemoryUserStorage implements UserStorage {
         }
 
         users.put(user.getId(), user);
-        log.trace("Создан пользователь {}", user);
+        log.info("Создан пользователь {}", user);
         return user;
     }
 
@@ -46,22 +46,17 @@ public class InMemoryUserStorage implements UserStorage {
 
         User oldUser = users.get(user.getId());
 
+        oldUser.setLogin(user.getLogin());
+        oldUser.setBirthday(user.getBirthday());
+        oldUser.setEmail(user.getEmail());
+
         if (user.getName() != null && !user.getName().isEmpty()) {
             oldUser.setName(user.getName());
+        } else {
+            oldUser.setName(user.getLogin());
         }
 
-        if (user.getLogin() != null) {
-            oldUser.setLogin(user.getLogin());
-        }
-
-        if (user.getBirthday() != null) {
-            oldUser.setBirthday(user.getBirthday());
-        }
-
-        if (user.getEmail() != null) {
-            oldUser.setEmail(user.getEmail());
-        }
-        log.trace("Пользователь с id {} обновлен", user.getId());
+        log.info("Пользователь с id {} обновлен", user.getId());
         return oldUser;
     }
 

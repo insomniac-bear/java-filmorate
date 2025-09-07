@@ -1,29 +1,32 @@
 package ru.yandex.practicum.filmorate.storage;
 
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestBody;
 import ru.yandex.practicum.filmorate.exception.DuplicatedDataException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @Component
 public class InMemoryFilmStorage implements FilmStorage {
     private Long lastId = 1L;
     private final Map<Long, Film> films = new HashMap<>();
 
     @Override
-    public Map<Long, Film> getFilms() {
-        return films;
+    public Collection<Film> getFilms() {
+        return Map.copyOf(films).values();
     }
 
     @Override
     public Film createFilm(Film film) {
         if (findFilmByName(film.getName()) != null) {
+            log.error("Попытка создать существующий фильм");
             throw new DuplicatedDataException("Такой фильм уже существует");
         }
 
@@ -34,11 +37,8 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     @Override
     public Film updateFilm(@Valid @RequestBody Film film) {
-        if (film.getId() == null) {
-            throw new ValidationException("Id должен быть указан");
-        }
-
         if (!films.containsKey(film.getId())) {
+            log.error("Фильм с id {} не найден", film.getId());
             throw new NotFoundException("Фильм с id = " + film.getId() + " не найден");
         }
 
@@ -48,11 +48,8 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     @Override
     public Film getFilmById(Long filmId) {
-        if (filmId == null) {
-            throw new ValidationException("filmId не передан");
-        }
-
         if (!films.containsKey(filmId)) {
+            log.error("Фильм с id {} не найден", filmId);
             throw new NotFoundException("Фильм с id " + filmId + " не найден");
         }
 
