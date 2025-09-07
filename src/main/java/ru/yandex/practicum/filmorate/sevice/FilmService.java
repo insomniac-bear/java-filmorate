@@ -77,7 +77,7 @@ public class FilmService extends StorageService<Film> implements Recommendation 
             throw new ValidationException("Параметр count должен быть положительным числом");
         }
 
-        return filmStorage.getFilms().stream().sorted(Comparator.comparingInt(f -> -f.getLikes().size())                )
+        return filmStorage.getFilms().stream().sorted(Comparator.comparingInt(f -> -f.getLikes().size()))
                 .limit(count)
                 .collect(Collectors.toList());
     }
