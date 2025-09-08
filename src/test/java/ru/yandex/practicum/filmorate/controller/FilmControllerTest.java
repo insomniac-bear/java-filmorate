@@ -216,6 +216,6 @@ class FilmControllerTest {
                         post("/films")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(film)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
     }
 }
