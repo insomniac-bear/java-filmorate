@@ -27,8 +27,8 @@ public class Film {
     private LocalDate releaseDate;
     @Positive(message = "Продолжительность фильма не может быть отрицательной")
     private Integer duration;
-    @Builder.Default
-    private Set<Long> likes = new HashSet<>();
+    private Mpa mpa;
+    private Set<Genre> genres = new HashSet<>();
 
     @AssertTrue(message = "Фильм не может быть раньше 28.12.1895")
     public boolean isValidReleaseDate() {

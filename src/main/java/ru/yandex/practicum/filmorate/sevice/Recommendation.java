@@ -6,9 +6,7 @@ import java.util.Collection;
 
 public interface Recommendation {
 
-    Film addLike(Long filmId, Long userId);
+    void addLike(Long filmId, Long userId);
 
     void removeLike(Long filmId, Long userId);
-
-    Collection<Film> getPopularFilms(int count);
 }
