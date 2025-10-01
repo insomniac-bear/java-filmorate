@@ -7,5 +7,6 @@ import java.util.Optional;
 
 public interface MpaRepository {
     List<Mpa> getAll();
+
     Optional<Mpa> getById(Long id);
 }
