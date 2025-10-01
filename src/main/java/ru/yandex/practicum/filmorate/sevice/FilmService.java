@@ -1,84 +1,98 @@
 package ru.yandex.practicum.filmorate.sevice;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dto.FilmRequest;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.UserStorage;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.repository.GenreRepository;
+import ru.yandex.practicum.filmorate.repository.JdbcFilmRepository;
+import ru.yandex.practicum.filmorate.repository.LikeRepository;
 
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class FilmService extends StorageService<Film> implements Recommendation {
-    private final FilmStorage filmStorage;
-    private final UserStorage userStorage;
+public class FilmService {
+    private final JdbcFilmRepository filmRepository;
+    private final LikeRepository likeRepository;
+    private final GenreRepository genreRepository;
 
-    @Override
-    public Collection<Film> getAll() {
-        return filmStorage.getFilms();
+    public List<Film> getAll() {
+        return filmRepository.findAll();
     }
 
-    @Override
     public Film getById(Long filmId) {
         if (filmId == null) {
             log.error("Не передан id фильма");
             throw new ValidationException("filmId не передан");
         }
 
-        return filmStorage.getFilmById(filmId);
-    }
+        Film film = filmRepository.findById(filmId)
+                .orElseThrow(() -> {
+                    log.error("Фильм с id {} не найден", filmId);
+                    return new NotFoundException("Фильм с id " + filmId + " не найдег");
+                });
 
-    @Override
-    public Film create(Film film) {
-        return filmStorage.createFilm(film);
-    }
+        List<Long> filmGenreIds = filmRepository.getFilmGenres(film.getId()).stream().sorted().toList();
+        Map<Long, Genre> genres = genreRepository.getAll().stream()
+                .collect(Collectors.toMap(
+                        Genre::getId,
+                        Function.identity()
+                ));
+        Set<Genre> filmGenres = new HashSet<>();
 
-    @Override
-    public Film update(Film film) {
-        if (film.getId() == null) {
-            log.error("Не передан id фильма");
-            throw new ValidationException("Id должен быть указан");
+        for (Long genreId: filmGenreIds) {
+            filmGenres.add(genres.get(genreId));
         }
 
-        return filmStorage.updateFilm(film);
-    }
-
-    public Film addLike(Long filmId, Long userId) {
-        Film film = filmStorage.getFilmById(filmId);
-        User user = userStorage.getUserById(userId);
-
-        Set<Long> filmLikes = film.getLikes();
-        filmLikes.add(user.getId());
-        log.info("Добавлен лайк от пользователя с id {} для фильма с id {}", userId, filmId);
+        film.setGenres(filmGenres);
 
         return film;
     }
 
-    public void removeLike(Long filmId, Long userId) {
-        Film film = filmStorage.getFilmById(filmId);
-        User user = userStorage.getUserById(userId);
-
-        Set<Long> filmLikes = film.getLikes();
-        filmLikes.remove(user.getId());
-        log.info("Удален лайк от пользователя с id {} для фильма с id {}", userId, filmId);
+    public Film create(Film film) {
+        return filmRepository.create(film);
     }
 
-    public Collection<Film> getPopularFilms(int count) {
+    public Film update(@Valid FilmRequest request) {
+        if (!request.hasId()) {
+            log.error("Не передан id фильма");
+            throw new ValidationException("Id должен быть указан");
+        }
+
+        Film film = filmRepository.findById(request.getId())
+                .map(oldFilm -> FilmMapper.updateFilmFields(oldFilm, request))
+                .orElseThrow(() -> {
+                    log.error("Фильм с id {} не найден", request.getId());
+                    return new NotFoundException("Фильм с id " + request.getId() + " не найден");
+                });
+
+        return filmRepository.update(film);
+    }
+
+    public List<Film> getPopularFilms(int count) {
         if (count <= 0) {
             log.warn("Параметр count меньше или равен 0");
             throw new ValidationException("Параметр count должен быть положительным числом");
         }
 
-        return filmStorage.getFilms().stream().sorted(Comparator.comparingInt(f -> -f.getLikes().size()))
-                .limit(count)
-                .collect(Collectors.toList());
+        List<Long> popularFilmIds = likeRepository.getPopularFilmIds(count);
+        List<Film> films = filmRepository.findFilmsByIds(popularFilmIds);
+        Map<Long, Film> filmMap = films.stream()
+                .collect(Collectors.toMap(Film::getId, Function.identity()));
+
+        return popularFilmIds.stream()
+                .map(filmMap::get)
+                .filter((Objects::nonNull))
+                .toList();
     }
 }

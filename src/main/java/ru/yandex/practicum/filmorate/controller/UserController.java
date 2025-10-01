@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.sevice.UserService;
 
@@ -17,7 +18,7 @@ public class UserController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public Collection<User> getUsers() {
+    public List<User> getUsers() {
         return userService.getAll();
     }
 
@@ -35,8 +36,8 @@ public class UserController {
 
     @PutMapping
     @ResponseStatus(HttpStatus.OK)
-    public User updateUser(@Valid @RequestBody User user) {
-        return userService.update(user);
+    public User updateUser(@RequestBody UpdateUserRequest request) {
+        return userService.update(request);
     }
 
     @PutMapping("/{id}/friends/{friendId}")
@@ -49,10 +50,10 @@ public class UserController {
 
     @DeleteMapping("/{id}/friends/{friendId}")
     @ResponseStatus(HttpStatus.OK)
-    public User removeFriend(@PathVariable Map<String, String> pathVarsMap) {
+    public void removeFriend(@PathVariable Map<String, String> pathVarsMap) {
         Long userId = Long.parseLong(pathVarsMap.get("id"));
         Long friendId = Long.parseLong(pathVarsMap.get("friendId"));
-        return userService.removeFriend(userId, friendId);
+        userService.removeFriend(userId, friendId);
     }
 
     @GetMapping("/{id}/friends")
