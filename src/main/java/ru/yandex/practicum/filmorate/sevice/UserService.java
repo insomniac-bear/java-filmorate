@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @AllArgsConstructor
-public class UserService implements UserServiceInterface{
+public class UserService implements UserServiceInterface {
     private final JdbcUserRepository userRepository;
     private final JdbcFriendRepository friendRepository;
 
