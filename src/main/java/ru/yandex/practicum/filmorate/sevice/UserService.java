@@ -10,8 +10,6 @@ import ru.yandex.practicum.filmorate.dto.UserResponse;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.mapper.UserMapper;
-import ru.yandex.practicum.filmorate.model.Friend;
-import ru.yandex.practicum.filmorate.model.FriendStatus;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.repository.JdbcFriendRepository;
 import ru.yandex.practicum.filmorate.repository.JdbcUserRepository;
@@ -26,10 +24,11 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @AllArgsConstructor
-public class UserService {
+public class UserService implements UserServiceInterface{
     private final JdbcUserRepository userRepository;
     private final JdbcFriendRepository friendRepository;
 
+    @Override
     public List<UserResponse> getAll() {
         return userRepository.findAll()
                 .stream()
@@ -37,6 +36,7 @@ public class UserService {
                 .toList();
     }
 
+    @Override
     public UserResponse getById(Long userId) {
         if (userId == null) {
             log.error("Не передан id пользователя");
@@ -51,12 +51,14 @@ public class UserService {
                 });
     }
 
+    @Override
     public UserResponse create(CreateUserRequest request) {
         User user = UserMapper.createUserRequestToUser(request);
         User createdUser = userRepository.create(user);
         return UserMapper.userToUserResponse(createdUser);
     }
 
+    @Override
     public UserResponse update(UpdateUserRequest request) {
         if (!request.hasId()) {
             log.error("Id является обязательным");
@@ -73,6 +75,7 @@ public class UserService {
         return UserMapper.userToUserResponse(updatedUser);
     }
 
+    @Override
     public UserResponse addFriend(Long userId, Long friendId) {
         UserResponse user = getById(userId);
         UserResponse friend = getById(friendId);
@@ -96,6 +99,7 @@ public class UserService {
         return user;
     }
 
+    @Override
     public void removeFriend(Long userId, Long friendId) {
         UserResponse user = getById(userId);
         UserResponse friendUser = getById(friendId);
@@ -113,6 +117,7 @@ public class UserService {
         }
     }
 
+    @Override
     public List<UserResponse> getUserFriends(Long userId) {
         UserResponse user = getById(userId);
         Set<Long> friends = friendRepository.getAllFriends(user.getId());
@@ -123,6 +128,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    @Override
     public List<UserResponse> getCommonFriends(Long userId, Long friendId) {
         Set<Long> userFriends = friendRepository.getAllFriends(userId);
         Set<Long> otherFriends = friendRepository.getAllFriends(friendId);

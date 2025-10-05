@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate.repository.mapper;
 
 import org.springframework.jdbc.core.RowMapper;
 import ru.yandex.practicum.filmorate.dto.FriendResponse;
-import ru.yandex.practicum.filmorate.model.Friend;
 import ru.yandex.practicum.filmorate.util.FriendStatusValues;
 
 import java.sql.ResultSet;

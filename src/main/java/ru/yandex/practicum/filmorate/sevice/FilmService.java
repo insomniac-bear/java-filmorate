@@ -22,15 +22,17 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class FilmService {
+public class FilmService implements FilmServiceInterface {
     private final JdbcFilmRepository filmRepository;
     private final JdbcLikeRepository likeRepository;
     private final JdbcGenreRepository genreRepository;
 
+    @Override
     public List<FilmResponse> getAll() {
         return filmRepository.findAll();
     }
 
+    @Override
     public FilmResponse getById(Long filmId) {
         if (filmId == null) {
             log.error("Не передан id фильма");
@@ -59,10 +61,12 @@ public class FilmService {
         return film;
     }
 
+    @Override
     public FilmResponse create(CreateFilmRequest newFilm) {
         return filmRepository.create(newFilm);
     }
 
+    @Override
     public FilmResponse update(@Valid UpdateFilmRequest request) {
         if (!request.hasId()) {
             log.error("Не передан id фильма");
@@ -78,6 +82,7 @@ public class FilmService {
         return filmRepository.update(film);
     }
 
+    @Override
     public List<FilmResponse> getPopularFilms(int count) {
         if (count <= 0) {
             log.warn("Параметр count меньше или равен 0");

@@ -13,15 +13,17 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class GenreService {
+public class GenreService implements GenreServiceInterface {
     private final JdbcGenreRepository repository;
 
+    @Override
     public List<GenreResponse> getAll() {
         return repository.getAll().stream()
                 .map(GenreMapper::genreToGenreResponse)
                 .toList();
     }
 
+    @Override
     public GenreResponse getById(Long genreId) {
         if (genreId == null) {
             log.error("не передан id для получения жанра");

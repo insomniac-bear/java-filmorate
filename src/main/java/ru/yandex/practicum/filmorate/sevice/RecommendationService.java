@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dto.FilmResponse;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.repository.JdbcFilmRepository;
 import ru.yandex.practicum.filmorate.repository.JdbcLikeRepository;
@@ -14,7 +13,7 @@ import ru.yandex.practicum.filmorate.repository.JdbcUserRepository;
 @Slf4j
 @Service
 @AllArgsConstructor
-public class RecommendationService implements Recommendation {
+public class RecommendationService implements RecommendationServiceInterface {
     private final JdbcLikeRepository likeRepository;
     private final JdbcFilmRepository filmRepository;
     private final JdbcUserRepository userRepository;

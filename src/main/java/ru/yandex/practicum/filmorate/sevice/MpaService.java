@@ -12,13 +12,15 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class MpaService {
+public class MpaService implements MpaServiceInterface {
     private final JdbcMpaRepository repository;
 
+    @Override
     public List<Mpa> getAll() {
         return repository.getAll();
     }
 
+    @Override
     public Mpa getById(Long mpaId) {
         if (mpaId == null) {
             log.error("Не передан id для получения mpa");

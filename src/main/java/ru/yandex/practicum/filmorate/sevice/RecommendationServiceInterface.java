@@ -1,6 +1,6 @@
 package ru.yandex.practicum.filmorate.sevice;
 
-public interface Recommendation {
+public interface RecommendationServiceInterface {
 
     void addLike(Long filmId, Long userId);
 
