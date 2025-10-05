@@ -1,11 +1,10 @@
 package ru.yandex.practicum.filmorate.model;
 
-import lombok.Builder;
 import lombok.Data;
 
 @Data
-@Builder
-public class Mpa {
+public class FilmGenre {
     private Long id;
-    private String name;
+    private Long filmId;
+    private Long genreId;
 }

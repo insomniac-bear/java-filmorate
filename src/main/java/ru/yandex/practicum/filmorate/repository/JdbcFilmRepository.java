@@ -10,8 +10,11 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSourceUtils;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.validation.annotation.Validated;
+import ru.yandex.practicum.filmorate.dto.CreateFilmRequest;
+import ru.yandex.practicum.filmorate.dto.FilmResponse;
 import ru.yandex.practicum.filmorate.exception.InternalServerException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -22,14 +25,13 @@ import java.util.*;
 @Slf4j
 @Repository
 @RequiredArgsConstructor
-public class JdbcFilmRepository implements FilmRepository {
+public class JdbcFilmRepository {
     private final NamedParameterJdbcOperations jdbc;
     private final FilmRowMapper filmMapper = new FilmRowMapper();
     private final JdbcMpaRepository mpaRepository;
     private final JdbcGenreRepository genreRepository;
 
-    @Override
-    public List<Film> findAll() {
+    public List<FilmResponse> findAll() {
         String query = """
             SELECT f.*, m.id AS mpa_id, m.name AS mpa_name
             FROM films AS f
@@ -38,8 +40,7 @@ public class JdbcFilmRepository implements FilmRepository {
         return jdbc.query(query, filmMapper);
     }
 
-    @Override
-    public List<Film> findFilmsByIds(List<Long> filmIds) {
+    public List<FilmResponse> findFilmsByIds(List<Long> filmIds) {
         String query = """
             SELECT f.*, m.id AS mpa_id, m.name AS mpa_name
             FROM films AS f
@@ -51,8 +52,7 @@ public class JdbcFilmRepository implements FilmRepository {
         return jdbc.query(query, params, filmMapper);
     }
 
-    @Override
-    public Optional<Film> findById(Long filmId) {
+    public Optional<FilmResponse> findById(Long filmId) {
         String query = """
             SELECT  f.*, m.id AS mpa_id, m.name AS mpa_name
             FROM films as f
@@ -62,47 +62,61 @@ public class JdbcFilmRepository implements FilmRepository {
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("filmId", filmId);
         try {
-            Film result = jdbc.queryForObject(query, params, filmMapper);
+            FilmResponse result = jdbc.queryForObject(query, params, filmMapper);
             return Optional.ofNullable(result);
         } catch (EmptyResultDataAccessException ignored) {
             return Optional.empty();
         }
     }
 
-    @Override
-    public Film create(Film film) {
+    public FilmResponse create(CreateFilmRequest newFilm) {
         String query = """
             INSERT INTO films(name, description, release_date, duration, mpa_id)
             VALUES(:name, :description, :releaseDate, :duration, :mpaId)
             """;
+
+        Film film = FilmMapper.createFilmRequestToFilm(newFilm);
+        Mpa mpa = newFilm.getMpa();
+        Set<Genre> genres = newFilm.getGenres();
+
         GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
         MapSqlParameterSource params = new MapSqlParameterSource();
-        params.addValue("name", film.getName());
-        params.addValue("description", film.getDescription());
-        params.addValue("releaseDate", film.getReleaseDate());
-        params.addValue("duration", film.getDuration());
-        if (film.getMpa() == null) {
+
+        params.addValue("name", newFilm.getName());
+        params.addValue("description", newFilm.getDescription());
+        params.addValue("releaseDate", newFilm.getReleaseDate());
+        params.addValue("duration", newFilm.getDuration());
+
+        if (mpa == null) {
             params.addValue("mpaId", null);
         } else {
-            Long mpaId = film.getMpa().getId();
-            Optional<Mpa> mpa = mpaRepository.getById(mpaId);
-            if (mpa.isEmpty()) {
-                log.error("Передан некорректный id mpa: {}", mpaId);
-                throw new NotFoundException("Рейтинг с id " + mpaId + " не найден");
-            }
+            Long mpaId = mpa.getId();
+            mpa = mpaRepository.getById(mpaId)
+                    .orElseThrow(() -> {
+                        log.error("Передан некорректный id mpa: {}", mpaId);
+                        return new NotFoundException("Рейтинг с id " + mpaId + " не найден");
+                    });
             params.addValue("mpaId", mpaId);
         }
+
         jdbc.update(query, params, keyHolder);
-        film.setId(keyHolder.getKeyAs(Long.class));
-        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
-            batchCreateFilmsGenres(film.getId(), film.getGenres());
+        FilmResponse savingFilm = FilmResponse.builder()
+                .id(keyHolder.getKeyAs(Long.class))
+                .build();
+
+        if (genres != null && !genres.isEmpty()) {
+            batchCreateFilmsGenres(savingFilm.getId(), genres);
         }
-        return film;
+
+        savingFilm.setFilmData(film);
+        savingFilm.setGenres(genres);
+        savingFilm.setMpa(mpa);
+
+        return savingFilm;
     }
 
-    @Override
-    public Film update(@Validated Film film) {
-        Long filmId = film.getId();
+    public FilmResponse update(@Validated FilmResponse updateFilmRequest) {
+        Long filmId = updateFilmRequest.getId();
         findById(filmId).orElseThrow(() -> {
             log.error("Фильм с id {} не найден", filmId);
             return new NotFoundException("Фильм с id " + filmId + " не найден");
@@ -114,16 +128,20 @@ public class JdbcFilmRepository implements FilmRepository {
             """;
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("filmId", filmId);
-        params.addValue("name", film.getName());
-        params.addValue("description", film.getDescription());
-        params.addValue("releaseDate", film.getReleaseDate());
-        params.addValue("duration", film.getDuration());
-        if (film.getMpa() == null) {
+        params.addValue("name", updateFilmRequest.getName());
+        params.addValue("description", updateFilmRequest.getDescription());
+        params.addValue("releaseDate", updateFilmRequest.getReleaseDate());
+        params.addValue("duration", updateFilmRequest.getDuration());
+
+        Mpa mpa = updateFilmRequest.getMpa();
+        Set<Genre> genres = updateFilmRequest.getGenres();
+
+        if (mpa == null) {
             params.addValue("mpaId", null);
         } else {
-            Long mpaId = film.getMpa().getId();
-            Optional<Mpa> mpa = mpaRepository.getById(mpaId);
-            if (mpa.isEmpty()) {
+            Long mpaId = mpa.getId();
+            Optional<Mpa> savedMpa = mpaRepository.getById(mpaId);
+            if (savedMpa.isEmpty()) {
                 log.error("Передан некорректный id mpa: {}", mpaId);
                 throw new NotFoundException("Рейтинг с id " + mpaId + " не найден");
             }
@@ -135,15 +153,17 @@ public class JdbcFilmRepository implements FilmRepository {
             throw new InternalServerException("Не удалось обновить данные");
         }
 
-        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
+        if (genres != null && !genres.isEmpty()) {
             jdbc.update("DELETE FROM films_genres WHERE film_id = :filmId", params);
-            batchCreateFilmsGenres(filmId, film.getGenres());
+            batchCreateFilmsGenres(filmId, genres);
         }
 
-        return film;
+        updateFilmRequest.setMpa(mpa);
+        updateFilmRequest.setGenres(genres);
+
+        return updateFilmRequest;
     }
 
-    @Override
     public List<Long> getFilmGenres(Long filmId) {
         String query = "SELECT genre_id FROM films_genres WHERE film_id = :filmId";
         MapSqlParameterSource params = new MapSqlParameterSource();

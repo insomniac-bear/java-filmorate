@@ -1,18 +1,18 @@
 package ru.yandex.practicum.filmorate.repository.mapper;
 
 import org.springframework.jdbc.core.RowMapper;
-import ru.yandex.practicum.filmorate.model.FilmLikes;
+import ru.yandex.practicum.filmorate.model.Likes;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class FilmLikesRowMapper implements RowMapper<FilmLikes> {
+public class FilmLikesRowMapper implements RowMapper<Likes> {
     @Override
-    public FilmLikes mapRow(ResultSet resultSet, int rowNum) throws SQLException {
-        FilmLikes filmLikes = new FilmLikes();
-        filmLikes.setFilmId(resultSet.getLong("film_id"));
-        filmLikes.setLikesCount(resultSet.getInt("likes_count"));
+    public Likes mapRow(ResultSet resultSet, int rowNum) throws SQLException {
+        Likes likes = new Likes();
+        likes.setFilmId(resultSet.getLong("film_id"));
+        likes.setLikesCount(resultSet.getInt("likes_count"));
 
-        return filmLikes;
+        return likes;
     }
 }

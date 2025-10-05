@@ -13,7 +13,7 @@ import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
-public class JdbcMpaRepository implements MpaRepository {
+public class JdbcMpaRepository {
     private final NamedParameterJdbcOperations jdbc;
     private final MpaRowMapper mpaMapper = new MpaRowMapper();
 

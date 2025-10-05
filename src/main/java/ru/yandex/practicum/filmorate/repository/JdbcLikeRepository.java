@@ -11,10 +11,9 @@ import java.util.Set;
 
 @Repository
 @RequiredArgsConstructor
-public class JdbcLikeRepository implements LikeRepository {
+public class JdbcLikeRepository {
     private final NamedParameterJdbcOperations jdbc;
 
-    @Override
     public void addLike(Long filmId, Long userId) {
         String query = "INSERT INTO likes (film_id, user_id) VALUES (:filmId, :userId)";
         MapSqlParameterSource params = new MapSqlParameterSource();
@@ -23,7 +22,6 @@ public class JdbcLikeRepository implements LikeRepository {
         jdbc.update(query, params);
     }
 
-    @Override
     public void removeLike(Long filmId, Long userId) {
         String query = "DELETE FROM likes WHERE film_id = :filmId AND user_id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource();

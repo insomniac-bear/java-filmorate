@@ -12,7 +12,7 @@ import java.util.Set;
 
 @Slf4j
 @Data
-public class FilmRequest {
+public class UpdateFilmRequest {
     private Long id;
     private String name;
     private String description;
@@ -64,13 +64,5 @@ public class FilmRequest {
             throw new ValidationException("Продолжительность фильма не может быть отрицательной");
         }
         return true;
-    }
-
-    public boolean hasMpa() {
-        return mpa != null;
-    }
-
-    public boolean hasGenres() {
-        return !genres.isEmpty();
     }
 }

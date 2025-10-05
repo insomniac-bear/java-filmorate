@@ -3,15 +3,19 @@ package ru.yandex.practicum.filmorate.sevice;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dto.CreateUserRequest;
+import ru.yandex.practicum.filmorate.dto.FriendResponse;
 import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
+import ru.yandex.practicum.filmorate.dto.UserResponse;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.mapper.UserMapper;
 import ru.yandex.practicum.filmorate.model.Friend;
+import ru.yandex.practicum.filmorate.model.FriendStatus;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.repository.FriendRepository;
-import ru.yandex.practicum.filmorate.repository.UserRepository;
-import ru.yandex.practicum.filmorate.util.FriendStatus;
+import ru.yandex.practicum.filmorate.repository.JdbcFriendRepository;
+import ru.yandex.practicum.filmorate.repository.JdbcUserRepository;
+import ru.yandex.practicum.filmorate.util.FriendStatusValues;
 
 import java.util.HashSet;
 import java.util.List;
@@ -23,58 +27,63 @@ import java.util.stream.Collectors;
 @Service
 @AllArgsConstructor
 public class UserService {
-    private final UserRepository userRepository;
-    private final FriendRepository friendRepository;
+    private final JdbcUserRepository userRepository;
+    private final JdbcFriendRepository friendRepository;
 
-    public List<User> getAll() {
+    public List<UserResponse> getAll() {
         return userRepository.findAll()
                 .stream()
+                .map(UserMapper::userToUserResponse)
                 .toList();
     }
 
-    public User getById(Long userId) {
+    public UserResponse getById(Long userId) {
         if (userId == null) {
             log.error("Не передан id пользователя");
             throw new ValidationException("userId не передан");
         }
 
         return userRepository.findById(userId)
+                .map(UserMapper::userToUserResponse)
                 .orElseThrow(() -> {
                     log.error("Пользователь с id {} не найден", userId);
                     return new NotFoundException("Пользователь с id: " + userId + " не найден");
                 });
     }
 
-    public User create(User user) {
-        return userRepository.create(user);
+    public UserResponse create(CreateUserRequest request) {
+        User user = UserMapper.createUserRequestToUser(request);
+        User createdUser = userRepository.create(user);
+        return UserMapper.userToUserResponse(createdUser);
     }
 
-    public User update(UpdateUserRequest request) {
+    public UserResponse update(UpdateUserRequest request) {
         if (!request.hasId()) {
             log.error("Id является обязательным");
             throw new IllegalArgumentException("Id является обязательным");
         }
 
-        User updatedUser = userRepository.findById(request.getId())
+        User oldUser = userRepository.findById(request.getId())
                 .map(user -> UserMapper.updateUserFields(user, request))
                 .orElseThrow(() -> {
                     log.error("Пользователь с id {} не найден", request.getId());
                     return new NotFoundException("Пользователь не найден");
                 });
-        return userRepository.update(updatedUser);
+        User updatedUser = userRepository.update(oldUser);
+        return UserMapper.userToUserResponse(updatedUser);
     }
 
-    public User addFriend(Long userId, Long friendId) {
-        User user = getById(userId);
-        User friend = getById(friendId);
-        Optional<Friend> friendInfo = friendRepository.getFriendById(userId, friendId);
+    public UserResponse addFriend(Long userId, Long friendId) {
+        UserResponse user = getById(userId);
+        UserResponse friend = getById(friendId);
+        Optional<FriendResponse> friendInfo = friendRepository.getFriendById(userId, friendId);
 
         if (friendInfo.isPresent()) {
             log.info("Повторная попытка добавления пользователя {} в друзья к пользователю {}", friend, user);
             throw new IllegalArgumentException("Пользователь уже добавлен в друзья");
         }
 
-        Optional<Friend> friendQuery = friendRepository.getFriendById(friendId, userId);
+        Optional<FriendResponse> friendQuery = friendRepository.getFriendById(friendId, userId);
 
         if (friendQuery.isEmpty()) {
             friendRepository.addFriend(userId, friendId);
@@ -88,13 +97,13 @@ public class UserService {
     }
 
     public void removeFriend(Long userId, Long friendId) {
-        User user = getById(userId);
-        User friendUser = getById(friendId);
-        Optional<Friend> friend = friendRepository.getFriendById(userId, friendId);
+        UserResponse user = getById(userId);
+        UserResponse friendUser = getById(friendId);
+        Optional<FriendResponse> friend = friendRepository.getFriendById(userId, friendId);
 
         if (friend.isPresent()) {
-            Friend friendData = friend.get();
-            if (friendData.getStatus() == FriendStatus.ACCEPTED) {
+            FriendResponse friendData = friend.get();
+            if (friendData.getStatus() == FriendStatusValues.ACCEPTED) {
                 friendRepository.declineFriend(userId, friendId);
                 log.info("Пользователь {} отменил дружбу с пользователем {}", friendUser, user);
             } else {
@@ -104,16 +113,17 @@ public class UserService {
         }
     }
 
-    public List<User> getUserFriends(Long userId) {
-        User user = getById(userId);
+    public List<UserResponse> getUserFriends(Long userId) {
+        UserResponse user = getById(userId);
         Set<Long> friends = friendRepository.getAllFriends(user.getId());
         List<User> allUsers = userRepository.findAll();
         return allUsers.stream()
                 .filter(friend -> friends.contains(friend.getId()))
+                .map(UserMapper::userToUserResponse)
                 .collect(Collectors.toList());
     }
 
-    public List<User> getCommonFriends(Long userId, Long friendId) {
+    public List<UserResponse> getCommonFriends(Long userId, Long friendId) {
         Set<Long> userFriends = friendRepository.getAllFriends(userId);
         Set<Long> otherFriends = friendRepository.getAllFriends(friendId);
 
@@ -123,6 +133,7 @@ public class UserService {
 
         return allUsers.stream()
                 .filter(anyUser -> commonFriendIds.contains(anyUser.getId()))
+                .map(UserMapper::userToUserResponse)
                 .collect(Collectors.toList());
     }
 }

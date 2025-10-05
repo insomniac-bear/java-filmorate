@@ -1,5 +1,5 @@
 package ru.yandex.practicum.filmorate.util;
 
-public enum FriendStatus {
+public enum FriendStatusValues {
     PENDING, ACCEPTED
 }

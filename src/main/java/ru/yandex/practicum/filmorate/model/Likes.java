@@ -5,7 +5,8 @@ import lombok.RequiredArgsConstructor;
 
 @Data
 @RequiredArgsConstructor
-public class FilmLikes {
-    Long filmId;
-    int likesCount;
+public class Likes {
+    private Long id;
+    private Long filmId;
+    private int likesCount;
 }

@@ -14,17 +14,15 @@ import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
-public class JdbcUserRepository implements UserRepository {
+public class JdbcUserRepository {
     private final NamedParameterJdbcOperations jdbc;
     private final UserRowMapper userMapper = new UserRowMapper();
 
-    @Override
     public List<User> findAll() {
         String query = "SELECT * FROM users";
         return jdbc.query(query, userMapper);
     }
 
-    @Override
     public Optional<User> findById(Long userId) {
         String query = "SELECT * FROM users WHERE id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource();
@@ -37,7 +35,6 @@ public class JdbcUserRepository implements UserRepository {
         }
     }
 
-    @Override
     public User create(User user) {
         String query = "INSERT INTO users(email, login, name, birthday) VALUES(:email, :login, :name, :birthday)";
         GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
@@ -53,7 +50,6 @@ public class JdbcUserRepository implements UserRepository {
         return user;
     }
 
-    @Override
     public User update(User user) {
         String query = "UPDATE users SET email = :email, login = :login, name = :name, birthday = :birthday WHERE id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource();

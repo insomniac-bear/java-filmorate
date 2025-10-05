@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.sevice;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dto.FilmResponse;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
@@ -20,7 +21,7 @@ public class RecommendationService implements Recommendation {
 
     @Override
     public void addLike(Long filmId, Long userId) {
-        Film film = filmRepository.findById(filmId)
+        FilmResponse film = filmRepository.findById(filmId)
                 .orElseThrow(() -> {
                     log.error("Фильм с id {} не найден", filmId);
                     return new NotFoundException("Фильм с id: " + filmId + " не найден");
@@ -37,7 +38,7 @@ public class RecommendationService implements Recommendation {
 
     @Override
     public void removeLike(Long filmId, Long userId) {
-        Film film = filmRepository.findById(filmId)
+        FilmResponse film = filmRepository.findById(filmId)
                 .orElseThrow(() -> {
                     log.error("Фильм с id {} не найден", filmId);
                     return new NotFoundException("Фильм с id: " + filmId + " не найден");

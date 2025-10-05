@@ -1,23 +1,20 @@
-package ru.yandex.practicum.filmorate.model;
+package ru.yandex.practicum.filmorate.dto;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
-* User
-*/
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 @Builder
-public class User {
+public class UserResponse {
     private Long id;
     private String email;
     private String login;
     private String name;
     private LocalDate birthday;
-    private Long ratingId;
+    @Builder.Default
+    private Set<Long> friends = new HashSet<>();
 }
